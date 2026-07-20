@@ -1,0 +1,42 @@
+{
+  "name": "synapsecore",
+  "version": "1.0.0",
+  "description": "SynapseCore - Cybersecurity Training Platform",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "seed:courses": "node scripts/seed-learner-courses.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1068.0",
+    "@swc/helpers": "^0.5.15",
+    "autoprefixer": "^10.4.16",
+    "bcrypt": "^5.1.1",
+    "clsx": "^2.0.0",
+    "dotenv": "^17.4.2",
+    "framer-motion": "^12.40.0",
+    "iconv-lite": "^0.7.3",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^1.16.0",
+    "mongoose": "^8.0.0",
+    "next": "^16.0.0",
+    "nodemailer": "^8.0.10",
+    "pdfkit": "^0.13.0",
+    "postcss": "^8.4.31",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwindcss": "^3.4.1"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/node": "^20.10.5",
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.0.0",
+    "typescript": "^5.3.3"
+  }
+}
