@@ -5,9 +5,15 @@ import Navbar from '@/components/navbar';
 
 export default function NavbarWrapper() {
   const pathname = usePathname();
-  
-  const hideNavbarRoutes = ['/login', '/admin/login', '/client/login', '/learner/login'];
-  const shouldHideNavbar = hideNavbarRoutes.includes(pathname);
+
+  const hideNavbarRoutes = ['/login'];
+  const hideNavbarPrefixes = ['/admin', '/client', '/learner'];
+
+  const shouldHideNavbar =
+    hideNavbarRoutes.includes(pathname) ||
+    hideNavbarPrefixes.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
 
   if (shouldHideNavbar) {
     return null;
