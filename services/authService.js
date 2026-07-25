@@ -138,7 +138,10 @@ async function loginUser(credentials) {
 async function verifyUserEmail(email, code) {
   await connectDB();
 
-  const user = await User.findOne({ email });
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const verificationCode = String(code || '').trim();
+
+  const user = await User.findOne({ email: normalizedEmail });
   if (!user) {
     throw new Error('User not found');
   }
@@ -147,7 +150,7 @@ async function verifyUserEmail(email, code) {
     return user;
   }
 
-  if (!user.verificationCode || user.verificationCode !== code) {
+  if (!user.verificationCode || user.verificationCode !== verificationCode) {
     throw new Error('Invalid verification code');
   }
 
@@ -162,7 +165,8 @@ async function verifyUserEmail(email, code) {
 async function resendVerificationCode(email) {
   await connectDB();
 
-  const user = await User.findOne({ email });
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
   if (!user) {
     throw new Error('User not found');
   }

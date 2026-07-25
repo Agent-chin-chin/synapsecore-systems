@@ -42,7 +42,7 @@ function VerifyEmailForm() {
       const response = await fetch('/api/learner/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email: String(email).trim().toLowerCase(), code: String(code).trim() }),
       });
 
       const data = await response.json();
