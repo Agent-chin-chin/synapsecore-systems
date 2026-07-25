@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const User = require('../lib/models/User');
+let User = require('../lib/models/User');
+User = User && User.default ? User.default : User;
 const connectDB = require('../lib/mongoose');
 const { sendNotificationEmail } = require('../lib/email');
 const { sendSMS } = require('../lib/sms');
@@ -252,3 +253,4 @@ module.exports = {
   resetPassword,
   logoutUser
 };
+module.exports.default = module.exports;
