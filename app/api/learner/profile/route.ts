@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongoose';
-import User from '@/lib/models/User';
 import { authenticateAPI } from '@/lib/apiAuth';
+import { updateUserProfile } from '@/services/userService';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -13,20 +12,22 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { fullname, bio, learningGoals, location, experience } = body;
 
-    await connectDB();
-
     const update: any = {};
-    if (fullname !== undefined) update.name = fullname;
+    if (fullname !== undefined) update.fullname = fullname;
     if (bio !== undefined || learningGoals !== undefined || experience !== undefined || location !== undefined) {
-      update['learnerProfile'] = {
+      update.learnerProfile = {
         ...(bio !== undefined ? { bio } : {}),
         ...(learningGoals !== undefined ? { learningGoals } : {}),
         ...(experience !== undefined ? { experience } : {}),
-        ...(location !== undefined ? { location } : {})
+        ...(location !== undefined ? { location } : {}),
       };
     }
 
-    const updated = await User.findByIdAndUpdate(user.id, update, { new: true });
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json({ error: 'No changes provided' }, { status: 400 });
+    }
+
+    const updated = await updateUserProfile(user.id, update);
     if (!updated) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

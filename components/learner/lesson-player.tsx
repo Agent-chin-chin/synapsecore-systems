@@ -69,7 +69,7 @@ function renderMarkdownSimple(text?: string) {
   });
 }
 
-export default function LessonPlayer({
+function LessonPlayerContent({
   lesson,
   isCompleted,
   locked,
@@ -81,9 +81,13 @@ export default function LessonPlayer({
   const [activeVideo, setActiveVideo] = useState(0);
 
   useEffect(() => {
-    setActiveVideo(0);
-    if (videoRef.current) videoRef.current.pause();
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
   }, [lesson?._id]);
+
+  const video = lesson?.videos?.[activeVideo] || lesson?.videos?.[0];
+  const hasVideo = Boolean(video?.url);
 
   if (locked) {
     return (
@@ -100,9 +104,6 @@ export default function LessonPlayer({
       </div>
     );
   }
-
-  const video = lesson.videos?.[activeVideo] || lesson.videos?.[0];
-  const hasVideo = Boolean(video?.url);
 
   return (
     <div className="space-y-4">
@@ -157,45 +158,23 @@ export default function LessonPlayer({
         <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
           <h4 className="flex items-center gap-2 font-semibold text-white mb-3"><Download size={16} className="text-emerald-400" /> Downloads</h4>
           <div className="space-y-2">
-            {lesson.downloads.map((d, i) => (
+            {lesson.downloads.map((download, index) => (
               <a
-                key={i}
-                href={d.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-between rounded-xl bg-slate-950 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                key={index}
+                href={download.url}
+                className="block rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-200 hover:bg-slate-800"
               >
-                <span className="flex items-center gap-2"><FileText size={14} className="text-emerald-400" /> {d.label || "File"}</span>
-                <span className="text-xs uppercase text-slate-500">{d.fileType || "file"}</span>
+                {download.label || download.fileType || 'Download'}
               </a>
             ))}
           </div>
         </div>
       )}
-
-      {quizTitle && (
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
-          <h4 className="flex items-center gap-2 font-semibold text-white mb-1"><Trophy size={16} className="text-emerald-400" /> Lesson Quiz</h4>
-          <p className="text-sm text-slate-400">{quizTitle}</p>
-        </div>
-      )}
-
-      {lesson.assignment && (
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">
-          <h4 className="font-semibold text-white mb-1">Assignment: {lesson.assignment.title}</h4>
-          {lesson.assignment.description && <p className="text-sm text-slate-400">{lesson.assignment.description}</p>}
-          <div className="mt-1 text-xs text-slate-500">
-            {lesson.assignment.points ? `${lesson.assignment.points} pts` : ""}
-            {lesson.assignment.dueInDays ? ` · due in ${lesson.assignment.dueInDays} days` : ""}
-          </div>
-        </div>
-      )}
-
-      {lesson.discussionEnabled && (
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-5 text-sm text-slate-400">
-          💬 Discussion enabled for this lesson.
-        </div>
-      )}
     </div>
   );
+}
+
+export default function LessonPlayer(props: Props) {
+  const lessonKey = props.lesson?._id ?? 'lesson-player-default';
+  return <LessonPlayerContent key={lessonKey} {...props} />;
 }

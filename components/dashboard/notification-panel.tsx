@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 interface NotificationItem {
@@ -25,12 +24,7 @@ export default function NotificationPanel({
   onMarkAsRead,
   onClearAll 
 }: NotificationPanelProps) {
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    const count = notifications.filter(n => !n.isRead).length;
-    setUnreadCount(count);
-  }, [notifications]);
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -65,15 +59,12 @@ export default function NotificationPanel({
     if (onMarkAsRead) {
       await onMarkAsRead(id);
     }
-    // Optimistic update
-    setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
   const handleClearAll = async () => {
     if (onClearAll) {
       await onClearAll();
     }
-    setUnreadCount(0);
   };
 
   return (

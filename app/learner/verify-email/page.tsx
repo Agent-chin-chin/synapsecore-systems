@@ -1,4 +1,3 @@
-'use client'
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
@@ -8,20 +7,16 @@ import { motion } from 'framer-motion';
 function VerifyEmailForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => {
+    const emailParam = searchParams.get('email');
+    return emailParam ? decodeURIComponent(emailParam) : '';
+  });
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-
-  useEffect(() => {
-    const emailParam = searchParams.get('email');
-    if (emailParam) {
-      setEmail(decodeURIComponent(emailParam));
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -42,7 +37,7 @@ function VerifyEmailForm() {
       const response = await fetch('/api/learner/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: String(email).trim().toLowerCase(), code: String(code).trim() }),
+        body: JSON.stringify({ email: String(email).trim().toLowerCase(), code: String(code).replace(/\D/g, '').trim() }),
       });
 
       const data = await response.json();

@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "env": {
+    "PRE_LAUNCH_MODE": "true"
+  }
+}

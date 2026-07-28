@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongoose';
-import User from '@/lib/models/User';
 import { authenticateAPI } from '@/lib/apiAuth';
+import { getUserById, updateUserProfile } from '@/services/userService';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,14 +9,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
-
-    const profile = await User.findById(user.id).select('settings').lean();
+    const profile = await getUserById(user.id);
     if (!profile) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, settings: profile.settings || {} });
+    const settings = profile?.user_metadata?.settings || profile?.settings || {};
+    return NextResponse.json({ success: true, settings });
   } catch (error) {
     console.error('Error fetching learner settings:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -31,8 +29,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
-
     const body = await request.json();
     const settings = body.settings;
 
@@ -40,17 +36,12 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid settings payload' }, { status: 400 });
     }
 
-    const updated = await User.findByIdAndUpdate(
-      user.id,
-      { $set: { settings, updatedAt: new Date() } },
-      { new: true }
-    ).select('settings');
-
+    const updated = await updateUserProfile(user.id, { settings });
     if (!updated) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, settings: updated.settings });
+    return NextResponse.json({ success: true, settings: updated.user_metadata?.settings || updated.settings || {} });
   } catch (error) {
     console.error('Error updating learner settings:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

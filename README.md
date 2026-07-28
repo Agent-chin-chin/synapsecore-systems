@@ -35,25 +35,33 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Email verification (Gmail / real SMTP)
+## Email verification and professional SMTP
 
-This project uses `nodemailer` via `lib/email.js`. By default in development the code will attempt to use Ethereal (a test SMTP service) if `SMTP_*` env vars are not configured. To send real verification emails using Gmail:
+This project uses `nodemailer` via `lib/email.js` for application-generated emails (admin notifications, registration PDFs, booking confirmations). Authentication confirmation emails are sent by Supabase Authentication. For reliable production email delivery we recommend using a dedicated provider such as Resend, SendGrid, or AWS SES and configuring it in two places:
 
-1. Enable 2-Step Verification for the Gmail account you want to send from.
-2. Create an App Password (Mail) and copy the generated password.
-3. Create a `.env.local` from `.env.local.example` and set the following values:
+- Supabase Dashboard → Authentication → Providers → Email (configure Custom SMTP)
+- This application's SMTP/relay settings via environment variables (for app-generated messages)
+
+Recommended environment variables (example using Resend SMTP relay):
 
 ```
-SMTP_HOST=smtp.gmail.com
+RESEND_API_KEY=rs_live_xxx
+EMAIL_FROM="SynapseCore Systems" <noreply@synapsecoresystems.com>
+```
+
+Or, for a traditional SMTP relay:
+
+```
+SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587
-SMTP_USER=youremail@gmail.com
-SMTP_PASSWORD=your_app_password_here
-EMAIL_FROM="Your App" <noreply@yourdomain.com>
+SMTP_USER=apikey
+SMTP_PASSWORD=<provider-smtp-password>
+EMAIL_FROM="SynapseCore Systems" <noreply@synapsecoresystems.com>
 ```
 
-4. Restart the dev server (`npm run dev`). Verification emails (registration and resend) will now be sent through Gmail.
+After updating credentials, restart the dev server (`npm run dev`).
 
-Security note: Use app passwords or a secure SMTP provider in production; never commit real credentials to source control.
+Security note: Do not commit SMTP credentials to source control. Use environment variables or a secrets management system in production.
 
 ## SMS and Seed Setup
 

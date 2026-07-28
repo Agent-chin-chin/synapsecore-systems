@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { authenticateAPI, requireRole } from '@/lib/apiAuth';
-import User from '@/lib/models/User';
-import connectDB from '@/lib/mongoose';
 import { getUsers, updateUserRole, updateUserStatus, deleteUser } from '@/services/userService';
+import { registerUser } from '@/services/authService';
 import { createAuditLog } from '@/services/auditLogService';
 import { errorResponse } from '@/lib/apiResponse';
 import { sendNotificationEmail } from '@/lib/email';
@@ -38,8 +37,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await connectDB();
-
     const body = await request.json();
     const { fullname, email, phone, password, role } = body;
 
@@ -50,33 +47,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 400 }
-      );
-    }
-
-    const user = new User({
-      fullname,
-      email,
-      phone,
-      password,
-      role: role || 'client',
-      status: role === 'learner' ? 'pending' : 'approved'
-    });
-
-    await user.save();
-
-    const { password: _, ...userWithoutPassword } = user.toObject();
+    const result = await registerUser({ fullname, email, phone, password, role });
 
     return NextResponse.json(
-      { message: 'User created successfully', user: userWithoutPassword },
+      { message: 'User created successfully', user: result.user },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating user:', error);
+    if (error instanceof Error && error.message.includes('already exists')) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -1,4 +1,3 @@
-'use client'
 'use client';
 
 import { motion } from 'framer-motion';
@@ -22,11 +21,7 @@ export default function SupportPage() {
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchTickets();
-  }, []);
-
-  const fetchTickets = async () => {
+  async function fetchTickets() {
     try {
       const response = await fetch('/api/support', { credentials: 'include' });
       if (response.ok) {
@@ -38,7 +33,26 @@ export default function SupportPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTickets = async () => {
+      try {
+        await fetchTickets();
+      } catch (error) {
+        if (isMounted) {
+          console.error('Error loading tickets:', error);
+        }
+      }
+    };
+
+    void loadTickets();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +124,8 @@ export default function SupportPage() {
         </div>
 
         {showForm && (
-          <motion.div
+          <motion.form
+            onSubmit={handleSubmit}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -154,7 +169,7 @@ export default function SupportPage() {
                 Cancel
               </button>
             </div>
-          </motion.div>
+          </motion.form>
         )}
 
         {loading ? (

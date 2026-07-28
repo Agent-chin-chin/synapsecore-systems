@@ -1,8 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTokenFromRequest, verifyToken, isAdmin, isClient, isLearner } from '@/lib/guards';
 
+const excludedPaths = [
+  '/_next',
+  '/api',
+  '/admin',
+  '/client',
+  '/dashboard',
+  '/learner',
+  '/auth',
+  '/login',
+  '/forgot-password',
+  '/pre-launch',
+  '/favicon.ico',
+  '/logo.ico',
+  '/robots.txt',
+  '/sitemap.xml',
+];
+
+function isExcludedPath(pathname: string) {
+  return excludedPaths.some((segment) => pathname === segment || pathname.startsWith(`${segment}/`));
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const preLaunchMode = process.env.PRE_LAUNCH_MODE === 'true';
+
+  if (preLaunchMode && !isExcludedPath(pathname)) {
+    return NextResponse.rewrite(new URL('/pre-launch', request.url));
+  }
+
   const isAdminRoute = pathname.startsWith('/admin');
   const isAdminLogin = pathname === '/admin/login';
   const isClientRoute = pathname.startsWith('/client');
@@ -62,5 +89,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/client/:path*', '/learner/:path*'],
+  matcher: ['/:path*'],
 };

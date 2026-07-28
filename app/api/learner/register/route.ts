@@ -3,8 +3,24 @@ import { cookies } from 'next/headers';
 import { registerUser } from '../../../../services/authService';
 import { sendNotificationEmail, sendLearnerRegistrationPDF } from '../../../../lib/email';
 import { sendSMS } from '@/lib/sms';
-import Payment from '@/lib/models/Payment';
-import Course from '@/lib/models/Course';
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    const message = error.message || '';
+    const lower = message.toLowerCase();
+    if (lower.includes('rate limit') || lower.includes('email rate limit')) {
+      return 'Registration is temporarily unavailable because email delivery is rate-limited. Please try again in a few minutes.';
+    }
+    if (lower.includes('already registered') || lower.includes('already exists')) {
+      return 'An account with this email already exists.';
+    }
+    if (lower.includes('invalid email') || lower.includes('password')) {
+      return message;
+    }
+  }
+
+  return 'Server error';
+}
 
 interface CourseDocument {
   _id: string;
@@ -165,10 +181,12 @@ export async function POST(req: Request) {
     let paymentInfo: { id: string; amount: number; status: string; course: string } | null = null;
     if (selectedCourse && paymentPlanPreference) {
       try {
-        const course = await Course.findOne({ title: selectedCourse }).lean() as CourseDocument | null;
+        const { default: CourseModel } = await import('../../../../lib/models/Course');
+        const { default: PaymentModel } = await import('../../../../lib/models/Payment');
+        const course = await CourseModel.findOne({ title: selectedCourse }).lean() as CourseDocument | null;
         if (course) {
           const coursePrice = typeof course.price === 'number' ? course.price : 0;
-          const payment = new Payment({
+          const payment = new PaymentModel({
             userId: result.user.id,
             amount: coursePrice,
             paymentMethod: 'paystack',
@@ -211,15 +229,11 @@ export async function POST(req: Request) {
 
   } catch (error: unknown) {
     console.error('Error registering learner:', error);
-    if (error instanceof Error && error.message === 'User with this email already exists') {
-      return NextResponse.json(
-        { message: error.message },
-        { status: 400 }
-      );
-    }
+    const message = getErrorMessage(error);
+    const status = message.includes('already exists') || message.includes('Please') || message.includes('Passwords') || message.includes('accept the terms') ? 400 : 500;
     return NextResponse.json(
-      { message: 'Server error' },
-      { status: 500 }
+      { message },
+      { status }
     );
   }
 }

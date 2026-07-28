@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongoose';
-import User from '@/lib/models/User';
 import Notification from '@/lib/models/Notification';
 import { authenticateAPI } from '@/lib/apiAuth';
 import { isAdmin } from '@/lib/guards';
 import { sendNotificationEmail } from '@/lib/email';
+import { updateUserStatus } from '@/services/userService';
 
 function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -17,8 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const { id } = await params;
-  await connectDB();
-  const learner = await User.findByIdAndUpdate(id, { status: 'suspended', updatedAt: new Date() }, { new: true });
+  const learner = await updateUserStatus(id, 'suspended');
 
   if (!learner) {
     return NextResponse.json({ error: 'Learner not found' }, { status: 404 });

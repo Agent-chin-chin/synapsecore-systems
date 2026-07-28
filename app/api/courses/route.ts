@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongoose';
-import Course from '@/lib/models/Course';
+import { listCourses, createCourse } from '@/lib/supabase/modules/courses';
 
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
-
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const level = searchParams.get('level');
 
-    const filter: any = {};
+    const filter: Record<string, string> = {};
     if (category) filter.category = category;
     if (level) filter.level = level;
 
-    const courses = await Course.find(filter)
-      .select('title category level price duration description instructor')
-      .sort({ category: 1, level: 1, price: 1 })
-      .lean();
+    const courses = await listCourses(filter);
 
     return NextResponse.json({ courses }, { status: 200 });
   } catch (error: any) {
@@ -31,8 +25,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await connectDB();
-
     const body = await request.json();
     const {
       title,
@@ -56,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const course = new Course({
+    const course = await createCourse({
       title,
       description: description || '',
       category,
@@ -70,8 +62,6 @@ export async function POST(request: NextRequest) {
       certificate: certificate || { enabled: true },
       instructor: instructor || {},
     });
-
-    await course.save();
 
     return NextResponse.json(
       { message: 'Course created successfully', course },

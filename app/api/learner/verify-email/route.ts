@@ -4,17 +4,20 @@ import { verifyUserEmail } from '../../../../services/authService';
 export async function POST(req: Request) {
   try {
     const { email, code } = await req.json();
-    const normalizedEmail = String(email || '').trim().toLowerCase();
-    const verificationCode = String(code || '').trim();
-
-    if (!normalizedEmail || !verificationCode) {
+    
+    console.log(`[verify-email API] Raw input - email: "${email}", code: "${code}"`);
+    
+    // Don't double-normalize here; the service will normalize
+    if (!email || !code) {
       return NextResponse.json(
         { message: 'Email and verification code are required' },
         { status: 400 }
       );
     }
 
-    const user = await verifyUserEmail(normalizedEmail, verificationCode);
+    const user = await verifyUserEmail(email, code);
+
+    console.log(`[verify-email API] Verification successful for user: ${user._id}`);
 
     return NextResponse.json(
       {

@@ -45,24 +45,37 @@ export default function ClientIncidentDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchIncident();
-  }, [incidentId]);
+    if (!incidentId) return;
 
-  async function fetchIncident() {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/incidents/${incidentId}`, { credentials: 'include' });
-      if (!res.ok) {
-        throw new Error('Failed to fetch incident');
+    let isMounted = true;
+
+    const loadIncident = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/incidents/${incidentId}`, { credentials: 'include' });
+        if (!res.ok) {
+          throw new Error('Failed to fetch incident');
+        }
+        const data = await res.json();
+        if (!isMounted) return;
+        setIncident(data.incident);
+      } catch (err: unknown) {
+        if (isMounted) {
+          const message = err instanceof Error ? err.message : 'Failed to load incident';
+          setError(message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-      const data = await res.json();
-      setIncident(data.incident);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load incident');
-    } finally {
-      setLoading(false);
-    }
-  }
+    };
+
+    void loadIncident();
+    return () => {
+      isMounted = false;
+    };
+  }, [incidentId]);
 
   if (loading) {
     return (

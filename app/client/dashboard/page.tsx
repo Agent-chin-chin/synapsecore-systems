@@ -1,4 +1,3 @@
-'use client'
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -63,43 +62,52 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch dashboard data
   useEffect(() => {
-    fetchDashboardData();
+    let isMounted = true;
+
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+
+        const [statsRes, activityRes, chartsRes, notificationsRes] = await Promise.all([
+          fetch('/api/dashboard/stats', { credentials: 'include' }),
+          fetch('/api/dashboard/activity', { credentials: 'include' }),
+          fetch('/api/dashboard/charts', { credentials: 'include' }),
+          fetch('/api/notifications', { credentials: 'include' })
+        ]);
+
+        if (!statsRes.ok) throw new Error('Failed to fetch stats');
+        if (!activityRes.ok) throw new Error('Failed to fetch activity');
+        if (!chartsRes.ok) throw new Error('Failed to fetch charts');
+        if (!notificationsRes.ok) throw new Error('Failed to fetch notifications');
+
+        const statsData = await statsRes.json();
+        const activityData = await activityRes.json();
+        const chartsData = await chartsRes.json();
+        const notificationsData = await notificationsRes.json();
+
+        if (!isMounted) return;
+        setDashboardStats(statsData.data);
+        setActivityFeed(activityData.data);
+        setChartData(chartsData.data);
+        setNotifications(notificationsData.data.notifications || []);
+      } catch (err: unknown) {
+        if (isMounted) {
+          const message = err instanceof Error ? err.message : 'Failed to load dashboard';
+          setError(message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadDashboardData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
-
-  async function fetchDashboardData() {
-    try {
-      setLoading(true);
-      
-// Fetch all dashboard data in parallel
-      const [statsRes, activityRes, chartsRes, notificationsRes] = await Promise.all([
-        fetch('/api/dashboard/stats', { credentials: 'include' }),
-        fetch('/api/dashboard/activity', { credentials: 'include' }),
-        fetch('/api/dashboard/charts', { credentials: 'include' }),
-        fetch('/api/notifications', { credentials: 'include' })
-      ]);
-
-      if (!statsRes.ok) throw new Error('Failed to fetch stats');
-      if (!activityRes.ok) throw new Error('Failed to fetch activity');
-      if (!chartsRes.ok) throw new Error('Failed to fetch charts');
-      if (!notificationsRes.ok) throw new Error('Failed to fetch notifications');
-      
-      const statsData = await statsRes.json();
-      const activityData = await activityRes.json();
-      const chartsData = await chartsRes.json();
-      const notificationsData = await notificationsRes.json();
-      
-      setDashboardStats(statsData.data);
-      setActivityFeed(activityData.data);
-      setChartData(chartsData.data);
-      setNotifications(notificationsData.data.notifications || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   // Mark notification as read
   const handleMarkAsRead = async (id: string) => {

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongoose';
-import Enrollment from '@/lib/models/Enrollment';
-import Course from '@/lib/models/Course';
-import User from '@/lib/models/User';
 import { authenticateAPI } from '@/lib/apiAuth';
+import { getSupabaseClient } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   const user = authenticateAPI(request);
@@ -12,26 +9,36 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    await connectDB();
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return NextResponse.json({ error: 'Supabase is not configured' }, { status: 500 });
+    }
 
-    const enrollments = await Enrollment.find({ learnerId: user.id }).populate('courseId');
+    const { data: enrollments, error: enrollmentsError } = await supabase
+      .from('enrollments')
+      .select('*')
+      .eq('learner_id', user.id)
+      .order('enrolled_at', { ascending: false });
 
-    const learner = await User.findById(user.id);
-    const enrolledCourses = enrollments.map((enrollment: any) => ({
-      courseId: enrollment.courseId?._id.toString() || '',
-      courseTitle: enrollment.courseId?.title || 'Unknown Course',
-      progress: enrollment.progress?.progressPercentage || 0,
-      completedLessons: enrollment.progress?.completedLessons || 0,
-      totalLessons: enrollment.progress?.totalLessons || 0,
+    if (enrollmentsError) {
+      throw enrollmentsError;
+    }
+
+    const enrolledCourses = (enrollments || []).map((enrollment: any) => ({
+      courseId: enrollment.course_id || '',
+      courseTitle: enrollment.course_title || 'Unknown Course',
+      progress: enrollment.progress || 0,
+      completedLessons: enrollment.completed_lessons || 0,
+      totalLessons: enrollment.total_lessons || 0,
       status: enrollment.status || 'enrolled',
-      enrolledAt: enrollment.createdAt
+      enrolledAt: enrollment.enrolled_at
     }));
 
     return NextResponse.json({
       learner: {
         id: user.id,
-        fullName: learner?.fullName || 'Learner',
-        email: learner?.email
+        fullName: user.email?.split('@')[0] || 'Learner',
+        email: user.email
       },
       enrolledCourses,
       stats: {
